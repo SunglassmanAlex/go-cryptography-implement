@@ -1,7 +1,7 @@
 package elgamal
 
 import (
-	"Implement/internal/crypto/bn254util"
+	"Implement/crypto/bn254util"
 	"errors"
 
 	"github.com/consensys/gnark-crypto/ecc/bn254"

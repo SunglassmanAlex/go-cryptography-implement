@@ -17,4 +17,5 @@ func RandomNonZeroScalar() (*big.Int, error) {
 			return x, nil
 		}
 	}
+
 }

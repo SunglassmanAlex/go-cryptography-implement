@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Implement/internal/crypto/bn254util"
-	"Implement/internal/crypto/elgamal"
+	"Implement/crypto/bn254util"
+	"Implement/crypto/elgamal"
 	"fmt"
 	"math/big"
 	"net"
