@@ -18,3 +18,8 @@ type Ciphertext struct {
 	C1 bn254.G1Affine
 	C2 bn254.G1Affine
 }
+
+type HybridCiphertext struct {
+	C1     bn254.G1Affine
+	Cipher []byte
+}

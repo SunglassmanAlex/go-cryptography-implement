@@ -1,7 +1,6 @@
 package base
 
 import (
-	"Implement/crypto/bn254util"
 	"Implement/crypto/elgamal"
 	"Implement/crypto/ot"
 	"errors"
@@ -27,45 +26,27 @@ func Send(conn net.Conn, m0, m1 []byte) error {
 		return err
 	}
 
-	r0, err := bn254util.RandomNonZeroScalar()
+	ct0, err := pub0.EncryptBytes(m0)
 	if err != nil {
-		fmt.Println("Sender generate r0 failed")
 		return err
 	}
-	r1, err := bn254util.RandomNonZeroScalar()
+	ct1, err := pub1.EncryptBytes(m1)
 	if err != nil {
-		fmt.Println("Sender generate r1 failed")
 		return err
 	}
 
-	var C0, C1 bn254.G1Affine
-	C0.ScalarMultiplicationBase(r0)
-	C1.ScalarMultiplicationBase(r1)
-
-	if err := enc.Encode(&C0); err != nil {
+	if err := enc.Encode(&ct0.C1); err != nil {
 		return err
 	}
-
-	if err := enc.Encode(&C1); err != nil {
-		return err
-	}
-
-	var shared0, shared1 bn254.G1Affine
-	shared0.ScalarMultiplication(&pub0.Point, r0)
-	shared1.ScalarMultiplication(&pub1.Point, r1)
-
-	key0 := bn254util.KeyFromPoint(&shared0)
-	key1 := bn254util.KeyFromPoint(&shared1)
-
-	cipher0 := ot.XorBytes(m0, key0)
-	cipher1 := ot.XorBytes(m1, key1)
-
-	if err := ot.WriteBytes(conn, cipher0); err != nil {
+	if err := ot.WriteBytes(conn, ct0.Cipher); err != nil {
 		fmt.Println("Sender write cipher0 error:", err)
 		return err
 	}
 
-	if err := ot.WriteBytes(conn, cipher1); err != nil {
+	if err := enc.Encode(&ct1.C1); err != nil {
+		return err
+	}
+	if err := ot.WriteBytes(conn, ct1.Cipher); err != nil {
 		fmt.Println("Sender write cipher1 error:", err)
 		return err
 	}
@@ -114,38 +95,32 @@ func Receive(conn net.Conn, choice byte) ([]byte, error) {
 		return nil, err
 	}
 
-	var C0, C1 bn254.G1Affine
+	ct0 := new(elgamal.HybridCiphertext)
+	ct1 := new(elgamal.HybridCiphertext)
+	var err error
 
-	if err := dec.Decode(&C0); err != nil {
+	if err := dec.Decode(&ct0.C1); err != nil {
 		return nil, fmt.Errorf("receive C0: %w", err)
 	}
+	ct0.Cipher, err = ot.ReadBytes(conn)
+	if err != nil {
+		return nil, err
+	}
 
-	if err := dec.Decode(&C1); err != nil {
+	if err := dec.Decode(&ct1.C1); err != nil {
 		return nil, fmt.Errorf("receive C1: %w", err)
 	}
-
-	cipher0, err := ot.ReadBytes(conn)
+	ct1.Cipher, err = ot.ReadBytes(conn)
 	if err != nil {
 		return nil, err
 	}
 
-	cipher1, err := ot.ReadBytes(conn)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedC := &C0
-	selectedCipher := cipher0
-
+	selectedCt := &ct0
 	if choice == 1 {
-		selectedC = &C1
-		selectedCipher = cipher1
+		selectedCt = &ct1
 	}
 
-	var shared bn254.G1Affine
-	shared.ScalarMultiplication(selectedC, priv.X)
+	msg, err := priv.DecryptBytes(*selectedCt)
 
-	key := bn254util.KeyFromPoint(&shared)
-	message := ot.XorBytes(selectedCipher, key)
-	return message, nil
+	return msg, nil
 }
