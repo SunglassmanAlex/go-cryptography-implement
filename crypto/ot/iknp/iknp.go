@@ -3,6 +3,7 @@ package iknp
 import (
 	"Implement/crypto/ot"
 	"Implement/crypto/ot/base"
+	"Implement/crypto/transport"
 	"net"
 )
 
@@ -40,7 +41,7 @@ func Send(conn net.Conn, m0List, m1List [][]byte) error {
 
 	uRows := make([][]byte, Kappa)
 	for j := 0; j < Kappa; j++ {
-		row, err := ot.ReadBytes(conn)
+		row, err := transport.ReadBytes(conn)
 		if err != nil {
 			return err
 		}
@@ -64,10 +65,10 @@ func Send(conn net.Conn, m0List, m1List [][]byte) error {
 		cipher0 := ot.XorBytes(m0List[i], key0)
 		cipher1 := ot.XorBytes(m1List[i], key1)
 
-		if err := ot.WriteBytes(conn, cipher0); err != nil {
+		if err := transport.WriteBytes(conn, cipher0); err != nil {
 			return err
 		}
-		if err := ot.WriteBytes(conn, cipher1); err != nil {
+		if err := transport.WriteBytes(conn, cipher1); err != nil {
 			return err
 		}
 	}
@@ -101,7 +102,7 @@ func Receive(conn net.Conn, choices []byte) ([][]byte, error) {
 	}
 
 	for j := 0; j < Kappa; j++ {
-		if err := ot.WriteBytes(conn, uRows[j]); err != nil {
+		if err := transport.WriteBytes(conn, uRows[j]); err != nil {
 			return nil, err
 		}
 	}
@@ -112,11 +113,11 @@ func Receive(conn net.Conn, choices []byte) ([][]byte, error) {
 
 	result := make([][]byte, n)
 	for i := 0; i < n; i++ {
-		cipher0, err := ot.ReadBytes(conn)
+		cipher0, err := transport.ReadBytes(conn)
 		if err != nil {
 			return nil, err
 		}
-		cipher1, err := ot.ReadBytes(conn)
+		cipher1, err := transport.ReadBytes(conn)
 		if err != nil {
 			return nil, err
 		}

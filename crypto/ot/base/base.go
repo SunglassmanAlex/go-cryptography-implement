@@ -2,7 +2,6 @@ package base
 
 import (
 	"Implement/crypto/elgamal"
-	"Implement/crypto/ot"
 	"errors"
 	"fmt"
 	"net"
@@ -11,7 +10,7 @@ import (
 )
 
 func Send(conn net.Conn, m0, m1 []byte) error {
-	enc := bn254.NewEncoder(conn)
+	// enc := bn254.NewEncoder(conn)
 	dec := bn254.NewDecoder(conn)
 
 	pub0 := new(elgamal.PublicKey)
@@ -35,27 +34,19 @@ func Send(conn net.Conn, m0, m1 []byte) error {
 		return err
 	}
 
-	if err := enc.Encode(&ct0.C1); err != nil {
+	if err := elgamal.WriteHybridCiphertext(conn, ct0); err != nil {
 		return err
 	}
-	if err := ot.WriteBytes(conn, ct0.Cipher); err != nil {
-		fmt.Println("Sender write cipher0 error:", err)
+	if err := elgamal.WriteHybridCiphertext(conn, ct1); err != nil {
 		return err
 	}
 
-	if err := enc.Encode(&ct1.C1); err != nil {
-		return err
-	}
-	if err := ot.WriteBytes(conn, ct1.Cipher); err != nil {
-		fmt.Println("Sender write cipher1 error:", err)
-		return err
-	}
 	return nil
 }
 
 func Receive(conn net.Conn, choice byte) ([]byte, error) {
 	enc := bn254.NewEncoder(conn)
-	dec := bn254.NewDecoder(conn)
+	// dec := bn254.NewDecoder(conn)
 
 	pub0 := new(elgamal.PublicKey)
 	pub1 := new(elgamal.PublicKey)
@@ -95,22 +86,11 @@ func Receive(conn net.Conn, choice byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ct0 := new(elgamal.HybridCiphertext)
-	ct1 := new(elgamal.HybridCiphertext)
-	var err error
-
-	if err := dec.Decode(&ct0.C1); err != nil {
-		return nil, fmt.Errorf("receive C0: %w", err)
-	}
-	ct0.Cipher, err = ot.ReadBytes(conn)
+	ct0, err := elgamal.ReadHybridCiphertext(conn)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := dec.Decode(&ct1.C1); err != nil {
-		return nil, fmt.Errorf("receive C1: %w", err)
-	}
-	ct1.Cipher, err = ot.ReadBytes(conn)
+	ct1, err := elgamal.ReadHybridCiphertext(conn)
 	if err != nil {
 		return nil, err
 	}

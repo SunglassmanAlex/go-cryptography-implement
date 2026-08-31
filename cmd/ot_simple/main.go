@@ -13,7 +13,7 @@ func main() {
 
 	m0 := []byte("00000000")
 	m1 := []byte("11111111")
-	choice := byte(1)
+	choice := byte(0)
 
 	senderDone := make(chan error, 1)
 	receiverDone := make(chan struct {

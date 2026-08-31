@@ -1,4 +1,4 @@
-package ot
+package transport
 
 import (
 	"encoding/binary"
