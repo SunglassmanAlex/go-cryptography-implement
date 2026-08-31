@@ -40,29 +40,23 @@ func Send(conn net.Conn, m0, m1 []byte) error {
 func Receive(conn net.Conn, choice byte) ([]byte, error) {
 	pub0 := new(elgamal.PublicKey)
 	pub1 := new(elgamal.PublicKey)
-	priv := new(elgamal.PrivateKey)
+
+	priv, pk0, err := elgamal.GenerateKey()
+	if err != nil {
+		return nil, errors.New("generate public and private key failed")
+	}
+	pk1, err := elgamal.GeneratePubKey()
+	if err != nil {
+		return nil, errors.New("generate public key failed")
+	}
 
 	switch choice {
 	case byte(0):
-		var err error
-		priv, pub0, err = elgamal.GenerateKey()
-		if err != nil {
-			return nil, errors.New("generate public and private key failed")
-		}
-		pub1, err = elgamal.GeneratePubKey()
-		if err != nil {
-			return nil, errors.New("generate public key failed")
-		}
+		pub0 = pk0
+		pub1 = pk1
 	case byte(1):
-		var err error
-		priv, pub1, err = elgamal.GenerateKey()
-		if err != nil {
-			return nil, errors.New("generate public and private key failed")
-		}
-		pub0, err = elgamal.GeneratePubKey()
-		if err != nil {
-			return nil, errors.New("generate public key failed")
-		}
+		pub0 = pk1
+		pub1 = pk0
 	default:
 		return nil, errors.New("choice not 0 or 1")
 	}
