@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-
-	"github.com/consensys/gnark-crypto/ecc/bn254"
 )
 
 func Send(conn net.Conn, m0, m1 []byte) error {
@@ -40,9 +38,6 @@ func Send(conn net.Conn, m0, m1 []byte) error {
 }
 
 func Receive(conn net.Conn, choice byte) ([]byte, error) {
-	enc := bn254.NewEncoder(conn)
-	// dec := bn254.NewDecoder(conn)
-
 	pub0 := new(elgamal.PublicKey)
 	pub1 := new(elgamal.PublicKey)
 	priv := new(elgamal.PrivateKey)
@@ -72,11 +67,11 @@ func Receive(conn net.Conn, choice byte) ([]byte, error) {
 		return nil, errors.New("choice not 0 or 1")
 	}
 
-	if err := enc.Encode(&pub0.Point); err != nil {
+	if err := elgamal.WritePublicKey(conn, pub0); err != nil {
 		fmt.Println("Receiver send pub0 error: ", err)
 		return nil, err
 	}
-	if err := enc.Encode(&pub1.Point); err != nil {
+	if err := elgamal.WritePublicKey(conn, pub1); err != nil {
 		fmt.Println("Receiver send pub1 error: ", err)
 		return nil, err
 	}
