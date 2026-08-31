@@ -2,6 +2,9 @@ package elgamal
 
 import (
 	"Implement/crypto/transport"
+	"errors"
+	"fmt"
+	"io"
 	"net"
 
 	"github.com/consensys/gnark-crypto/ecc/bn254"
@@ -31,4 +34,28 @@ func ReadHybridCiphertext(conn net.Conn) (*HybridCiphertext, error) {
 	ct.Cipher = cipher
 
 	return ct, nil
+}
+
+func WritePublicKey(w io.Writer, pub *PublicKey) error {
+	if pub == nil {
+		return errors.New("nil public key")
+	}
+
+	enc := bn254.NewEncoder(w)
+	if err := enc.Encode(&pub.Point); err != nil {
+		return fmt.Errorf("encode public key: %w", err)
+	}
+
+	return nil
+}
+
+func ReadPublicKey(r io.Reader) (*PublicKey, error) {
+	pub := new(PublicKey)
+
+	dec := bn254.NewDecoder(r)
+	if err := dec.Decode(&pub.Point); err != nil {
+		return nil, fmt.Errorf("decode public key: %w", err)
+	}
+
+	return pub, nil
 }

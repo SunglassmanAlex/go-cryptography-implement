@@ -10,19 +10,14 @@ import (
 )
 
 func Send(conn net.Conn, m0, m1 []byte) error {
-	// enc := bn254.NewEncoder(conn)
-	dec := bn254.NewDecoder(conn)
-
-	pub0 := new(elgamal.PublicKey)
-	pub1 := new(elgamal.PublicKey)
-
-	if err := dec.Decode(&pub0.Point); err != nil {
-		fmt.Println("Sender read pub0 error")
-		return err
+	pub0, err := elgamal.ReadPublicKey(conn)
+	if err != nil {
+		return fmt.Errorf("receive pub0: %w", err)
 	}
-	if err := dec.Decode(&pub1.Point); err != nil {
-		fmt.Println("Sender read pub1 error")
-		return err
+
+	pub1, err := elgamal.ReadPublicKey(conn)
+	if err != nil {
+		return fmt.Errorf("receive pub1: %w", err)
 	}
 
 	ct0, err := pub0.EncryptBytes(m0)
